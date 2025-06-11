@@ -36,7 +36,7 @@
     #mainUI {
       display: none;
       min-height: 100vh;
-      background: url('https://wallpapercave.com/wp/wp5179659.jpg') no-repeat center/cover;
+      background: url('https://img.freepik.com/free-vector/stream-binary-code-design-vector_53876-161364.jpg?semt=ais_hybrid&w=740') no-repeat center/cover;
       padding: 2rem;
       backdrop-filter: brightness(0.5);
       position: relative;
@@ -129,7 +129,7 @@
       color: white;
     }
     @media (max-width: 768px) {
-      button { flex: 1 1 48%; }
+      button { flex: 1 1 100%; }
       input[type="text"] { width: 90%; }
       h1 { font-size: 1.8rem; }
     }
@@ -138,11 +138,9 @@
 <body>
   <canvas id="matrix"></canvas>
   <div id="boot">Booting JARVIS_X...<br><small>Loading encrypted modules</small></div>
-
   <div id="mainUI">
     <button id="themeToggle" onclick="toggleTheme()">🌓 Toggle Theme</button>
     <h1>JARVIS_X - Cyber Ops Console</h1>
-
     <div class="panel btn-grid">
       <button onclick="handleCommand('weather')">🌦 Weather</button>
       <button onclick="handleCommand('news')">📰 News</button>
@@ -157,9 +155,7 @@
       <button onclick="handleCommand('google')">🔍 Google</button>
       <button onclick="handleCommand('shutdown')">🛑 Shutdown</button>
     </div>
-
     <div class="panel" id="terminal">Terminal ready...<span class="cursor"></span></div>
-
     <div class="panel">
       <h3>ChatGPT Terminal</h3>
       <input type="text" id="chatInput" placeholder="Ask anything...">
@@ -167,9 +163,7 @@
       <div id="chatResponse"></div>
     </div>
   </div>
-
   <script>
-    // Matrix
     const c = document.getElementById("matrix"), ctx = c.getContext("2d");
     c.width = innerWidth; c.height = innerHeight;
     const fontSize = 14, cols = Math.floor(c.width / fontSize), drops = Array(cols).fill(1);
@@ -188,21 +182,17 @@
       });
     }
     setInterval(drawMatrix, 40);
-
-    // Boot
     setTimeout(() => {
       document.getElementById("boot").style.display = "none";
       document.getElementById("matrix").style.display = "none";
       document.getElementById("mainUI").style.display = "block";
       startListening();
     }, 4000);
-
     function logToTerminal(msg) {
       const term = document.getElementById("terminal");
-      term.innerHTML += "\n> " + msg;
+      term.innerHTML += "<br>> " + msg;
       term.scrollTop = term.scrollHeight;
     }
-
     function handleCommand(cmd) {
       cmd = cmd.toLowerCase(); logToTerminal("Command: " + cmd);
       switch (cmd) {
@@ -221,23 +211,27 @@
         default: logToTerminal("❌ Unknown command: " + cmd);
       }
     }
-
     function startListening() {
-      const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      rec.lang = 'en-US'; rec.start();
-      logToTerminal("🎙 Listening... Say 'Hey Jarvis'");
-      rec.onresult = e => {
-        const t = e.results[0][0].transcript.toLowerCase();
-        logToTerminal("Voice: \"" + t + "\"");
-        if (t.startsWith("hey jarvis")) {
-          handleCommand(t.replace("hey jarvis", "").trim());
-        } else {
-          logToTerminal("❌ Say 'Hey Jarvis' first.");
-        }
-      };
-      rec.onend = () => setTimeout(() => rec.start(), 1000);
+      try {
+        const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        rec.lang = 'en-US';
+        rec.onstart = () => logToTerminal("🎙 Voice system ready. Say 'Hey Jarvis'");
+        rec.onresult = e => {
+          const t = e.results[0][0].transcript.toLowerCase();
+          logToTerminal("Voice: \"" + t + "\"");
+          if (t.startsWith("hey jarvis")) {
+            handleCommand(t.replace("hey jarvis", "").trim());
+          } else {
+            logToTerminal("❌ Say 'Hey Jarvis' first.");
+          }
+        };
+        
+        rec.onend = () => setTimeout(() => rec.start(), 1500);
+        rec.start();
+      } catch (err) {
+        logToTerminal("❌ Voice Recognition not supported in this browser.");
+      }
     }
-
     async function askChatGPT() {
       const inp = document.getElementById("chatInput").value;
       logToTerminal("ChatGPT Query: " + inp);
@@ -247,7 +241,7 @@
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": ""
+            "Authorization": "Bearer YOUR_API_KEY"
           },
           body: JSON.stringify({
             model: "gpt-3.5-turbo",
@@ -255,18 +249,20 @@
           })
         });
         const data = await res.json();
-        const ans = data.choices[0].message.content;
+        const ans = data?.choices?.[0]?.message?.content || "No response from AI.";
         document.getElementById("chatResponse").innerText = ans;
         logToTerminal("ChatGPT: " + ans);
       } catch (err) {
         logToTerminal("❌ Error contacting ChatGPT.");
+        document.getElementById("chatResponse").innerText = "❌ Failed to fetch response.";
       }
     }
-
+    document.getElementById("chatInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") askChatGPT();
+    });
     function toggleTheme() {
       document.body.classList.toggle("light-theme");
     }
   </script>
 </body>
 </html>
-jarvisV3
