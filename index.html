@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JARVIS_X - Cyber Ops Console</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Courier New', monospace;
+      background: black;
+      color: #00ffea;
+      overflow-x: hidden;
+      transition: background 0.5s, color 0.5s;
+    }
+    #matrix {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: black;
+      z-index: 2000;
+    }
+    #boot {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: #00ffea;
+      text-align: center;
+      font-size: 1.8rem;
+      animation: blink 1s infinite alternate;
+      z-index: 2001;
+    }
+    @keyframes blink {
+      0% { opacity: 1; } 100% { opacity: 0.3; }
+    }
+    #mainUI {
+      display: none;
+      min-height: 100vh;
+      background: url('https://wallpapercave.com/wp/wp5179659.jpg') no-repeat center/cover;
+      padding: 2rem;
+      backdrop-filter: brightness(0.5);
+      position: relative;
+    }
+    .panel {
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid #00ffea;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 0 15px #00ffea80;
+    }
+    .btn-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+    }
+    button {
+      flex: 1 1 calc(33% - 1rem);
+      background: transparent;
+      color: #00ffea;
+      border: 2px solid #00ffea;
+      padding: 0.6rem;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #00ffea;
+      color: #000;
+    }
+    #terminal {
+      font-size: 0.9rem;
+      max-height: 200px;
+      overflow-y: auto;
+      background: #000000c7;
+      border: 1px solid #00ffea;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+    .cursor {
+      display: inline-block;
+      width: 10px;
+      height: 20px;
+      background: #00ffea;
+      animation: blinkCursor 0.8s infinite;
+    }
+    @keyframes blinkCursor {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    input[type="text"] {
+      padding: 0.6rem;
+      width: 70%;
+      border: 1px solid #00ffea;
+      background: black;
+      color: #00ffea;
+      border-radius: 5px;
+    }
+    #themeToggle {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: #000;
+      color: #00ffea;
+      border: 1px solid #00ffea;
+      padding: 0.5rem;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .light-theme {
+      background: #f4f4f4;
+      color: #222;
+    }
+    .light-theme #terminal,
+    .light-theme .panel {
+      background: #ffffffcc;
+      border-color: #444;
+      color: #111;
+    }
+    .light-theme button {
+      border-color: #222;
+      color: #222;
+    }
+    .light-theme button:hover {
+      background: #222;
+      color: white;
+    }
+    @media (max-width: 768px) {
+      button { flex: 1 1 48%; }
+      input[type="text"] { width: 90%; }
+      h1 { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <div id="boot">Booting JARVIS_X...<br><small>Loading encrypted modules</small></div>
+
+  <div id="mainUI">
+    <button id="themeToggle" onclick="toggleTheme()">🌓 Toggle Theme</button>
+    <h1>JARVIS_X - Cyber Ops Console</h1>
+
+    <div class="panel btn-grid">
+      <button onclick="handleCommand('weather')">🌦 Weather</button>
+      <button onclick="handleCommand('news')">📰 News</button>
+      <button onclick="handleCommand('systeminfo')">💻 System Info</button>
+      <button onclick="handleCommand('todo')">✅ Tasks</button>
+      <button onclick="handleCommand('notes')">📝 Notes</button>
+      <button onclick="handleCommand('speed')">🌐 Net Speed</button>
+      <button onclick="handleCommand('instagram')">📸 Instagram</button>
+      <button onclick="handleCommand('facebook')">📘 Facebook</button>
+      <button onclick="handleCommand('whatsapp')">💬 WhatsApp</button>
+      <button onclick="handleCommand('youtube')">▶️ YouTube</button>
+      <button onclick="handleCommand('google')">🔍 Google</button>
+      <button onclick="handleCommand('shutdown')">🛑 Shutdown</button>
+    </div>
+
+    <div class="panel" id="terminal">Terminal ready...<span class="cursor"></span></div>
+
+    <div class="panel">
+      <h3>ChatGPT Terminal</h3>
+      <input type="text" id="chatInput" placeholder="Ask anything...">
+      <button onclick="askChatGPT()">Send</button>
+      <div id="chatResponse"></div>
+    </div>
+  </div>
+
+  <script>
+    // Matrix
+    const c = document.getElementById("matrix"), ctx = c.getContext("2d");
+    c.width = innerWidth; c.height = innerHeight;
+    const fontSize = 14, cols = Math.floor(c.width / fontSize), drops = Array(cols).fill(1);
+    function drawMatrix() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.fillStyle = "#00ff00";
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = "#00ff00";
+      ctx.font = fontSize + "px monospace";
+      drops.forEach((y, i) => {
+        const text = String.fromCharCode(0x30A0 + Math.random() * 96);
+        ctx.fillText(text, i * fontSize, y * fontSize);
+        if (y * fontSize > c.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      });
+    }
+    setInterval(drawMatrix, 40);
+
+    // Boot
+    setTimeout(() => {
+      document.getElementById("boot").style.display = "none";
+      document.getElementById("matrix").style.display = "none";
+      document.getElementById("mainUI").style.display = "block";
+      startListening();
+    }, 4000);
+
+    function logToTerminal(msg) {
+      const term = document.getElementById("terminal");
+      term.innerHTML += "\n> " + msg;
+      term.scrollTop = term.scrollHeight;
+    }
+
+    function handleCommand(cmd) {
+      cmd = cmd.toLowerCase(); logToTerminal("Command: " + cmd);
+      switch (cmd) {
+        case 'weather': logToTerminal("🌦 Weather: Sunny, 28°C (demo)"); break;
+        case 'news': logToTerminal("📰 News: AI upskilling cyber tools"); break;
+        case 'systeminfo': logToTerminal("💻 CPU: 4-core, RAM: 8GB"); break;
+        case 'todo': logToTerminal("✅ Tasks: 1. Hack satellites 2. Decode logs"); break;
+        case 'notes': logToTerminal("📝 Note: 'Hack the planet!'"); break;
+        case 'speed': logToTerminal("🌐 Speed: 120 Mbps down, 30 Mbps up"); break;
+        case 'instagram': window.open("https://instagram.com", "_blank"); break;
+        case 'facebook': window.open("https://facebook.com", "_blank"); break;
+        case 'whatsapp': window.open("https://web.whatsapp.com", "_blank"); break;
+        case 'youtube': window.open("https://youtube.com", "_blank"); break;
+        case 'google': window.open("https://google.com", "_blank"); break;
+        case 'shutdown': document.body.innerHTML = "<h1 style='color:red;text-align:center;margin-top:20%'>💀 SYSTEM TERMINATED 💀</h1>"; break;
+        default: logToTerminal("❌ Unknown command: " + cmd);
+      }
+    }
+
+    function startListening() {
+      const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      rec.lang = 'en-US'; rec.start();
+      logToTerminal("🎙 Listening... Say 'Hey Jarvis'");
+      rec.onresult = e => {
+        const t = e.results[0][0].transcript.toLowerCase();
+        logToTerminal("Voice: \"" + t + "\"");
+        if (t.startsWith("hey jarvis")) {
+          handleCommand(t.replace("hey jarvis", "").trim());
+        } else {
+          logToTerminal("❌ Say 'Hey Jarvis' first.");
+        }
+      };
+      rec.onend = () => setTimeout(() => rec.start(), 1000);
+    }
+
+    async function askChatGPT() {
+      const inp = document.getElementById("chatInput").value;
+      logToTerminal("ChatGPT Query: " + inp);
+      document.getElementById("chatResponse").innerText = "(Fetching...)";
+      try {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "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"
+          },
+          body: JSON.stringify({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: inp }]
+          })
+        });
+        const data = await res.json();
+        const ans = data.choices[0].message.content;
+        document.getElementById("chatResponse").innerText = ans;
+        logToTerminal("ChatGPT: " + ans);
+      } catch (err) {
+        logToTerminal("❌ Error contacting ChatGPT.");
+      }
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle("light-theme");
+    }
+  </script>
+</body>
+</html>
+jarvisV3
